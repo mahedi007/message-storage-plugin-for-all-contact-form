@@ -22,6 +22,7 @@ function msp_create_table() {
         time datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
         name tinytext NOT NULL,
         email text NOT NULL,
+        subject text NOT NULL,
         message text NOT NULL,
         spam tinyint(1) DEFAULT 0 NOT NULL,
         first_name tinytext NOT NULL,
@@ -42,6 +43,7 @@ function msp_cf7_store_data($contact_form) {
         $posted_data = $submission->get_posted_data();
         $name = sanitize_text_field($posted_data['your-name']);
         $email = sanitize_email($posted_data['your-email']);
+        $subject = sanitize_text_field($posted_data['your-subject']); // Ensure your form has a 'your-subject' field
         $message = sanitize_textarea_field($posted_data['your-message']);
 
         global $wpdb;
@@ -53,12 +55,60 @@ function msp_cf7_store_data($contact_form) {
                 'time' => current_time('mysql'),
                 'name' => $name,
                 'email' => $email,
+                'subject' => $subject, // Add subject here
                 'message' => $message,
             )
         );
     }
 }
 add_action('wpcf7_mail_sent', 'msp_cf7_store_data');
+
+// Hook into WPForms submission
+function msp_wpforms_store_data($fields, $entry, $form_data) {
+    msp_log('WPForms submission received.');
+
+    $name = '';
+    $email = '';
+    $subject = '';
+    $message = '';
+
+    foreach ($fields as $field) {
+        msp_log('Field type: ' . $field['type']);
+        msp_log('Field value: ' . $field['value']);
+        
+        if ($field['type'] == 'name') {
+            $name = sanitize_text_field($field['value']);
+        } elseif ($field['type'] == 'email') {
+            $email = sanitize_email($field['value']);
+        } elseif ($field['type'] == 'text' && strpos($field['label'], 'Subject') !== false) {
+            $subject = sanitize_text_field($field['value']);
+        } elseif ($field['type'] == 'textarea') {
+            $message = sanitize_textarea_field($field['value']);
+        }
+    }
+
+    msp_log('Name: ' . $name);
+    msp_log('Email: ' . $email);
+    msp_log('Subject: ' . $subject);
+    msp_log('Message: ' . $message);
+
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'messages';
+
+    $wpdb->insert(
+        $table_name,
+        array(
+            'time' => current_time('mysql'),
+            'name' => $name,
+            'email' => $email,
+            'subject' => $subject, // Add subject here
+            'message' => $message,
+        )
+    );
+
+    msp_log('Insert result: ' . $wpdb->last_error);
+}
+add_action('wpforms_process_complete', 'msp_wpforms_store_data', 10, 3);
 
 function msp_admin_menu() {
     add_menu_page(
@@ -71,7 +121,7 @@ function msp_admin_menu() {
         6
     );
     add_submenu_page(
-        'messages',
+        'message-storage',
         'Inbox',
         'Inbox',
         'manage_options',

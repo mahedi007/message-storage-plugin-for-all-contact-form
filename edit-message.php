@@ -8,6 +8,7 @@ function msp_edit_message_page() {
     if ($_POST['update_message']) {
         $name = sanitize_text_field($_POST['name']);
         $email = sanitize_email($_POST['email']);
+		$subject = sanitize_text_field($_POST['subject']);
         $message = sanitize_textarea_field($_POST['message']);
         $spam = isset($_POST['spam']) ? 1 : 0;
 
@@ -16,6 +17,7 @@ function msp_edit_message_page() {
             array(
                 'name' => $name,
                 'email' => $email,
+				'subject' => $subject,
                 'message' => $message,
                 'spam' => $spam
             ),
@@ -43,6 +45,10 @@ function msp_edit_message_page() {
                             <?php echo esc_html($message->email); ?>
                         </a>
                     </td>
+                </tr>
+				<tr>
+                    <th>Subject</th>
+                    <td><input type="text" name="subject" value="<?php echo esc_attr($message->subject); ?>" class="regular-text" readonly /></td>
                 </tr>
                 <tr>
                     <th>Message</th>

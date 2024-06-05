@@ -19,6 +19,7 @@ class MSP_Message_List_Table extends WP_List_Table {
             'cb'      => '<input type="checkbox" />',
             'name'    => 'Name',
             'email'   => 'Email',
+			'subject' => 'Subject',
             'message' => 'Message',
             'time'    => 'Time',
             'spam'    => 'Spam'
@@ -36,6 +37,10 @@ class MSP_Message_List_Table extends WP_List_Table {
 
     function column_email($item) {
         return $item->email;
+    }
+	
+	function column_subject($item) {
+        return $item->subject;
     }
 
     function column_message($item) {
